@@ -1,26 +1,69 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PrismaService } from '../../prisma/prisma.service';
+import { TypesenseService } from 'src/common/typesense/typesense.service';
 
 @Injectable()
 export class PostService {
-  create(createPostDto: CreatePostDto) {
-    return 'This action adds a new post';
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly typesenseService: TypesenseService,
+  ) {}
+
+  // Create post and index to Typesense
+  async create(createPostDto: CreatePostDto) {
+    const post = await this.prisma.post.create({
+      data: createPostDto,
+    });
+
+    // Convert Prisma post to Typesense format and index
+    const typesenseDoc = this.typesenseService.prismaPostToTypesenseDoc(post);
+    await this.typesenseService.addDocument(typesenseDoc);
+
+    return post;
   }
 
-  findAll() {
-    return `This action returns all post`;
+  // Search posts from Typesense
+  async searchPosts(query: string) {
+    return this.typesenseService.searchPosts(query);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} post`;
+  // Find all posts
+  async findAll() {
+    return await this.prisma.post.findMany();
   }
 
-  update(id: number, updatePostDto: UpdatePostDto) {
-    return `This action updates a #${id} post`;
+  // Find one post
+  async findOne(id: number) {
+    return await this.prisma.post.findUnique({
+      where: { id },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} post`;
+  // Update post and Typesense document
+  async update(id: number, updatePostDto: UpdatePostDto) {
+    const post = await this.prisma.post.update({
+      where: { id },
+      data: updatePostDto,
+    });
+
+    // Convert and update Typesense document
+    const typesenseDoc = this.typesenseService.prismaPostToTypesenseDoc(post);
+    await this.typesenseService.addDocument(typesenseDoc);
+
+    return post;
+  }
+
+  // Delete post and remove from Typesense
+  async remove(id: number) {
+    const deletedPost = await this.prisma.post.delete({
+      where: { id },
+    });
+
+    // Remove from Typesense (id as string)
+    await this.typesenseService.deleteDocument(id.toString());
+
+    return deletedPost;
   }
 }
