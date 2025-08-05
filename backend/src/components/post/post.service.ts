@@ -17,13 +17,9 @@ export class PostService {
       data: createPostDto,
     });
 
-    // Index to Typesense
-    await this.typesenseService.addDocument({
-      id: post.id,
-      title: post.title,
-      description: post.description,
-      imageUrl: post.imageUrl ?? undefined,
-    });
+    // Convert Prisma post to Typesense format and index
+    const typesenseDoc = this.typesenseService.prismaPostToTypesenseDoc(post);
+    await this.typesenseService.addDocument(typesenseDoc);
 
     return post;
   }
@@ -52,13 +48,9 @@ export class PostService {
       data: updatePostDto,
     });
 
-    // Update Typesense document
-    await this.typesenseService.addDocument({
-      id: post.id,
-      title: post.title,
-      description: post.description,
-      imageUrl: post.imageUrl ?? undefined,
-    });
+    // Convert and update Typesense document
+    const typesenseDoc = this.typesenseService.prismaPostToTypesenseDoc(post);
+    await this.typesenseService.addDocument(typesenseDoc);
 
     return post;
   }
@@ -69,10 +61,9 @@ export class PostService {
       where: { id },
     });
 
-    // Remove from Typesense
-    await this.typesenseService.deleteDocument(id);
+    // Remove from Typesense (id as string)
+    await this.typesenseService.deleteDocument(id.toString());
 
     return deletedPost;
   }
-
 }

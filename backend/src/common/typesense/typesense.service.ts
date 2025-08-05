@@ -1,11 +1,13 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import Typesense, { Client } from 'typesense';
 
-interface PostDocument { //define the post document
-  id: number;
+interface PostDocument {
+  id: string;          //string type for Typesense
+  userId: string;       
   title: string;
   description: string;
   imageUrl?: string;
+  createdAt: string;    
 }
 
 @Injectable()
@@ -43,13 +45,43 @@ export class TypesenseService implements OnModuleInit {
     return this.client.collections().create({
       name: 'posts',
       fields: [
-        { name: 'id', type: 'int32' },
+        { name: 'id', type: 'string' },           
+        { name: 'userId', type: 'string' },       
         { name: 'title', type: 'string' },
         { name: 'description', type: 'string' },
         { name: 'imageUrl', type: 'string', optional: true },
+        { name: 'createdAt', type: 'int64' },     
       ],
-      //default_sorting_field: 'id',
+      default_sorting_field: 'createdAt',         
     });
+  }
+
+  // Convert Prisma Post to Typesense PostDocument
+  prismaPostToTypesenseDoc(post: {
+    id: number;
+    userId: number;
+    title: string;
+    description: string;
+    imageUrl?: string | null;
+    createdAt: Date;
+  }): PostDocument {
+    return {
+      id: post.id.toString(),
+      userId: post.userId.toString(),
+      title: post.title,
+      description: post.description,
+      imageUrl: post.imageUrl ?? undefined,
+      createdAt: Math.floor(post.createdAt.getTime() / 1000).toString(), // Unix timestamp in seconds
+    };
+  }
+
+  async addDocument(document: PostDocument) {
+    try {
+      return await this.client.collections('posts').documents().upsert(document);
+    } catch (error) {
+      console.error('Typesense add document error:', error);
+      throw error;
+    }
   }
 
   async searchPosts(query: string) {
@@ -61,15 +93,6 @@ export class TypesenseService implements OnModuleInit {
       });
     } catch (error) {
       console.error('Typesense search error:', error);
-      throw error;
-    }
-  }
-
-  async addDocument(document: PostDocument) {
-    try {
-      return await this.client.collections('posts').documents().upsert(document);
-    } catch (error) {
-      console.error('Typesense add document error:', error);
       throw error;
     }
   }
