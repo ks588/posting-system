@@ -17,6 +17,11 @@ export class PostController {
     return this.postService.create(createPostDto);
   }
 
+  @Get('user/:userId')
+  findUserPost(@Param('userId') userId: string ){
+    return this.postService.findUserPost(+userId)
+  }
+
   @Get()
   findAll() {
     return this.postService.findAll();

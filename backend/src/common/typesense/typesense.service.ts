@@ -7,7 +7,7 @@ interface PostDocument {
   title: string;
   description: string;
   imageUrl?: string;
-  createdAt: string;    
+  createdAt: number;    
 }
 
 @Injectable()
@@ -15,31 +15,41 @@ export class TypesenseService implements OnModuleInit {
   private client: Client;
 
   async onModuleInit() {
-    this.client = new Typesense.Client({
-      nodes: [
-        {
-          host: process.env.TYPESENSE_HOST ?? 'localhost',
-          port: Number(process.env.TYPESENSE_PORT) ?? 8108,
-          protocol: process.env.TYPESENSE_PROTOCOL ?? 'http',
-        },
-      ],
-      apiKey: process.env.TYPESENSE_API_KEY ?? 'xyz123',
-      connectionTimeoutSeconds: 2,
-    });
+  this.client = new Typesense.Client({
+    nodes: [
+      {
+        host: process.env.TYPESENSE_HOST ?? 'localhost',
+        port: Number(process.env.TYPESENSE_PORT) ?? 8108,
+        protocol: process.env.TYPESENSE_PROTOCOL ?? 'http',
+      },
+    ],
+    apiKey: process.env.TYPESENSE_API_KEY ?? 'xyz123',
+    connectionTimeoutSeconds: 2,
+  });
 
-    try {
-      await this.client.collections('posts').retrieve();
-      console.log('Collection "posts" already exists');
-    } catch (error: any) {
-      if (error.httpStatus === 404 || error.message?.includes('Not Found')) {
-        console.log('Collection "posts" not found, creating...');
-        await this.createCollection();
-      } else {
-        console.error('Failed to initialize Typesense:', error);
-        throw error;
-      }
+  try {
+    // Try creating the collection first (will fail if it already exists)
+    await this.createCollection();
+    console.log('Collection "posts" created successfully');
+  } catch (error: any) {
+    if (error.httpStatus === 409 || error.message?.includes('already exists')) {
+      console.log('Collection "posts" already exists, skipping creation');
+    } else {
+      console.error('Error during collection creation:', error);
+      throw error;
     }
   }
+
+  try {
+    await this.client.collections('posts').retrieve();
+    console.log('Collection "posts" is accessible');
+  } catch (error) {
+    console.error('Failed to retrieve collection:', error);
+    throw error;
+  }
+}
+
+
 
   async createCollection() {
     return this.client.collections().create({
@@ -71,7 +81,7 @@ export class TypesenseService implements OnModuleInit {
       title: post.title,
       description: post.description,
       imageUrl: post.imageUrl ?? undefined,
-      createdAt: Math.floor(post.createdAt.getTime() / 1000).toString(), // Unix timestamp in seconds
+      createdAt: Math.floor(post.createdAt.getTime() / 1000), // Unix timestamp in seconds
     };
   }
 

@@ -41,6 +41,12 @@ export class PostService {
     });
   }
 
+  // Find user post 
+  async findUserPost(userId: number) {
+    const post = await this.prisma.post.findMany({where:{userId}});
+    return post;
+  }
+
   // Update post and Typesense document
   async update(id: number, updatePostDto: UpdatePostDto) {
     const post = await this.prisma.post.update({
