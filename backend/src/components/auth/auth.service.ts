@@ -1,26 +1,63 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UserService } from '../user/user.service';
+import * as bcrypt from 'bcryptjs';
+import { CreateUserDto } from '../user/dto/create-user.dto';
+import { LoginUserDto } from '../user/dto/login-user.dto';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  private readonly logger = new Logger(AuthService.name);
+
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  async login(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
+    const user = await this.userService.findByEmail(email);
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { sub: user.UserId, email: user.email };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user,
+    };
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  async register(createUserDto: CreateUserDto) {
+  try {
+    console.log('Registering user with:', createUserDto);
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+    const user = await this.userService.create(createUserDto);
+    console.log('User created:', user);
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+    const payload = { sub: user.UserId, email: user.email };
+    const token = this.jwtService.sign(payload);
+    console.log('Generated token:', token);
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    const output = {
+      access_token: token,
+      user,
+    };
+
+    console.log('Final output:', output);
+    return output;
+  } catch (error) {
+    console.error('REGISTER ERROR:', error);
+    throw error;
   }
+}
+
 }

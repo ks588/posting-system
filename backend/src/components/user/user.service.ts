@@ -58,6 +58,10 @@ export class UserService {
   }
 
   async update(UserId: number, updateUserDto: UpdateUserDto) {
+    
+    if (updateUserDto.password) { //if user update the password 
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
     try {
       const updatedUser = await this.prisma.user.update({
         where: { UserId },
@@ -70,6 +74,7 @@ export class UserService {
           updatedAt: true,
         },
       });
+
 
       return updatedUser;
     } catch (error) {
@@ -98,7 +103,7 @@ export class UserService {
     }
   }
 
-  async findOne(UserId: number) {
+  async findOne(UserId: number) { //find user by id 
     try {
       const user = await this.prisma.user.findUnique({
         where: { UserId },
@@ -107,6 +112,30 @@ export class UserService {
           email: true,
           username: true,
           createdAt: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to retrieve user');
+    }
+  }
+
+  //find user by email
+  async findByEmail(email : string ) { //find user by id 
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: {
+          UserId: true,
+          email: true,
+          username: true,
+          createdAt: true,
+          password:true,
         },
       });
 
