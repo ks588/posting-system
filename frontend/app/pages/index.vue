@@ -2,9 +2,9 @@
   <div class="flex flex-col justify-center items-center h-screen bg-white text-center">
     <img src="/logo.png" alt="App Icon" class="w-32 sm:w-40 md:w-48 lg:w-60 xl:w-72 mb-3" />
     
-    <ProgressBar :value="progress" class="w-64 h-4 bg-gray-200 rounded overflow-hidden">
+    <ProgressBar :value="progress" unstyled class="w-64 h-4 bg-gray-200 rounded overflow-hidden">
       <template #content>
-        <span class="text-black font-semibold">{{ progress }}%</span>
+        <span unstyled class="text-black font-semibold">{{ progress }}%</span>
       </template>
     </ProgressBar>
     

@@ -1,13 +1,64 @@
-<script setup>
-import { defineEmits } from 'vue'
-const emit = defineEmits(['close'])
-import { Form } from '@primevue/forms';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useCreatePost } from '../composables/useCreatePost'; // adjust path if needed
+import { defineEmits } from 'vue';
 
+const emit = defineEmits(['close']);
+
+// Your standalone login function that saves token to sessionStorage
+function login(): void {
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyNywiZW1haWwiOiJtYWlubHkwMkBlbWFpbC5jb20iLCJpYXQiOjE3NTQ5OTExNzgsImV4cCI6MTc1NTA3NzU3OH0.cusBLi1fsGV2TIrq_FqezqU3zpcDj-_xpH3Ddb2MZmU';
+
+  try {
+    sessionStorage.setItem('authToken', token);
+    console.log('Login successful, token saved.');
+  } catch (error) {
+    console.error('Failed to save token to sessionStorage:', error);
+  }
+}
+
+// Form fields reactive refs
+const title = ref('');
+const description = ref('');
+const imageUrl = ref('https://example.com/image.jpg');
+
+const { createPost } = useCreatePost();
+
+const loading = ref(false);
+const error = ref<string | null>(null);
 
 function close() {
-  emit('close')
+  emit('close');
+}
+
+async function onFormSubmit() {
+  error.value = null;
+  loading.value = true;
+
+  try {
+    // Call login function to save token in sessionStorage (mock login)
+    login();
+
+    // Now call createPost with form data
+    const data = await createPost(title.value, description.value);
+    console.log('Post created:', data);
+
+    // Optionally reset form fields
+    title.value = '';
+    description.value = '';
+
+    // Close modal on success
+    close();
+  } catch (err) {
+    error.value = (typeof err === 'object' && err !== null && 'message' in err)
+      ? (err as { message: string }).message
+      : 'Failed to create post';
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
+
 
 <template>
   <div
@@ -22,45 +73,55 @@ function close() {
       >
         ✕
       </button>
-      <h3 class="text-xl font-semibold mb-4">Create Post,</h3>
-      
-        <Form :initialValues="{}" :resolver="zodUserNameResolver" @submit="onFormSubmit" class="flex flex-col gap-2 w-full sm:w-80 ">
-            <p class="text-sm ml-2">Title</p>
-            <FormField v-slot="$field" name="title" initialValue="" :resolver="zodUserNameResolver" class="flex flex-col gap-3 border border-gray-300 rounded-md">
-                <InputText type="text" />
-                <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}</Message>
-            </FormField>
+      <h3 class="text-xl font-semibold mb-4">Create Post</h3>
 
-            <p class="text-sm ml-2">Description</p>
-            <FormField v-slot="$field" name="Description" class="flex flex-col gap-3 border border-gray-300 rounded-md">
-                <Textarea class="h-32"/>
-                <Message v-if="$field?.invalid" severity="error" size="small" variant="simple">{{ $field.error?.message }}</Message>
-            </FormField>
-            
-            <p class="text-sm ml-2 mt-5">Image Upload</p>
-            <FormField v-slot="$field" name="image" class="flex flex-col gap-3 text-sm">
-            <input
-                type="file"
-                accept="image/*"
-                @change="$field.handleChange($event)"
-                class="border border-gray-300 rounded-md p-2"
-            />
-            <Message
-                v-if="$field?.invalid"
-                severity="error"
-                size="small"
-                variant="simple"
-            >
-                {{ $field.error?.message }}
-            </Message>
-            </FormField>
-            <Button unstyled class="border border-black bg-black text-white px-8 mx-10 mt-5 py-2 rounded-md tracking-wider hover:border border-black hover:bg-white hover:text-black transition">
-                Submit Post
-            </Button>
-        </Form>
+      <form @submit.prevent="onFormSubmit" class="flex flex-col gap-4 w-full sm:w-80">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm ml-2">Title</span>
+          <input
+            v-model="title"
+            type="text"
+            class="border border-gray-300 rounded-md p-2"
+            required
+            placeholder="Enter post title"
+          />
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-sm ml-2">Description</span>
+          <textarea
+            v-model="description"
+            class="border border-gray-300 rounded-md p-2 h-32 resize-none"
+            required
+            placeholder="Enter post description"
+          ></textarea>
+        </label>
+
+        <!-- For image upload - keeping as input but note your createPost is fixed URL -->
+        <label class="flex flex-col gap-1">
+          <span class="text-sm ml-2">Image Upload</span>
+          <input
+            type="file"
+            accept="image/*"
+            disabled
+            title="Image upload not implemented yet"
+            class="border border-gray-300 rounded-md p-2 cursor-not-allowed"
+          />
+          <small class="text-xs text-gray-500">Image upload will be supported later.</small>
+        </label>
+
+        <button
+          type="submit"
+          :disabled="loading"
+          class="border border-black bg-black text-white px-8 py-2 rounded-md tracking-wider hover:border hover:bg-white hover:text-black transition disabled:opacity-50"
+        >
+          {{ loading ? 'Submitting...' : 'Submit Post' }}
+        </button>
+
+        <p v-if="error" class="text-red-600 text-sm mt-2">{{ error }}</p>
+      </form>
 
       <slot />
-      
     </div>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup>
-import { defineEmits, reactive } from 'vue'
+import { defineEmits, reactive, ref } from 'vue'
 import { z } from 'zod'
+
 const emit = defineEmits(['close'])
 
 function close() {
@@ -18,12 +19,30 @@ const initialValues = reactive({
   password: '',
 })
 
-function onFormSubmit(values) {
-  console.log('Login submitted:', values)
-  // Do login logic here
-  close()
+const loading = ref(false)
+const serverError = ref('')
+
+async function onFormSubmit(values) {
+  loading.value = true
+  serverError.value = ''
+
+  try {
+    const result = await login(values.email, values.password)
+
+    if (result.success) {
+      //show success toast or store token globally here
+      close()
+    } else {
+      serverError.value = result.message || 'Login failed'
+    }
+  } catch (err) {
+    serverError.value = err.message || 'Unexpected error'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
+
 
 <template>
   <div
@@ -39,7 +58,7 @@ function onFormSubmit(values) {
         ✕
       </button>
       <h3 class="text-xl font-semibold mb-4">Login</h3>
-      
+
       <Form
         :initialValues="initialValues"
         :resolver="schema"
@@ -80,14 +99,18 @@ function onFormSubmit(values) {
           </Message>
         </FormField>
 
+        <p v-if="serverError" class="text-red-600 ml-2 text-sm mb-2">{{ serverError }}</p>
+
         <Button
           unstyled
           type="submit"
-          class="border border-black bg-black text-white px-8 mx-10 mt-5 py-2 rounded-md tracking-wider hover:border-black hover:bg-white hover:text-black transition"
+          :disabled="loading"
+          class="border border-black bg-black text-white px-8 mx-10 mt-5 py-2 rounded-md tracking-wider hover:border-black hover:bg-white hover:text-black transition disabled:opacity-50"
         >
-          Login
+          {{ loading ? 'Logging in...' : 'Login' }}
         </Button>
       </Form>
     </div>
   </div>
 </template>
+

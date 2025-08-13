@@ -1,19 +1,32 @@
-// composables/usePosts.js
-import { watch } from 'vue'
+import { computed } from 'vue'
+import { useRuntimeConfig, useAsyncData } from '#imports'
 
 export function usePosts() {
-  const { data, error, pending, refresh } = useFetch('http://localhost:3000/post', {
-    transform: (res) => res.data || []
+  const config = useRuntimeConfig()
+
+  const { data, error, pending, refresh } = useAsyncData('posts', async () => {
+    try {
+      const res = await fetch(`${config.public.apiBase}/post`)
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null)
+        throw new Error(errorData?.message || `Error: ${res.status}`)
+      }
+
+      const json = await res.json()
+      return json.data || []
+    } catch (err) {
+      // Re-throw to let useAsyncData handle it
+      throw err
+    }
   })
 
-  watch(data, (newData) => {
-    console.log('Fetched posts:', newData)
-  })
+  const posts = computed(() => data.value || [])
 
   return {
-    posts: data,
+    posts,
     error,
     pending,
-    refresh
+    refresh,
   }
 }

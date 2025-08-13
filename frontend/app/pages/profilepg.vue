@@ -1,60 +1,106 @@
-<script setup>
-import { ref } from 'vue'
-import UserProfileForm from '~/components/UserProfileForm.vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import UserProfileForm from '../components/UserProfileForm.vue'
+import EditPostModal from '../components/EditPostModal.vue'
 
-const selectedItems = ref(new Array(6).fill(null))
+interface Post {
+  id: number
+  title: string
+  description: string
+  imageUrl: string
+}
 
-function ordinal(n) {
-  return n === 1
-    ? 'first'
-    : n === 2
-    ? 'second'
-    : n === 3
-    ? 'third'
-    : n === 4
-    ? 'fourth'
-    : n === 5
-    ? 'fifth'
-    : n === 6
-    ? 'sixth'
-    : n + 'th'
+async function postByUserId(): Promise<Post[]> {
+  const token = sessionStorage.getItem('authToken')
+  if (!token) throw new Error('No auth token found')
+
+  const base64Payload = token.split('.')[1]
+  const payload = JSON.parse(atob(base64Payload))
+  const userId = payload.sub
+
+  const res = await fetch(`http://localhost:3000/post/user/${userId}`)
+  if (!res.ok) throw new Error('Failed to fetch posts')
+
+  const json = await res.json()
+  if (!json.status) throw new Error(json.message || 'API error')
+
+  return json.data as Post[]
+}
+
+const posts = ref<Post[]>([])
+const selectedPost = ref<Post | null>(null)
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+onMounted(loadPosts)
+
+async function loadPosts() {
+  loading.value = true
+  try {
+    posts.value = await postByUserId()
+  } catch (err) {
+    error.value = (err as Error).message || 'Failed to load posts'
+  } finally {
+    loading.value = false
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('authToken')
 }
 </script>
 
 <template>
-  <div class="p-6 min-h-screen flex gap-6 bg-white">
-    <!-- Main Profile content - left side, flexible -->
+  <div class="p-6 min-h-screen flex gap-6 bg-white relative">
+    <!-- Main Profile -->
     <main class="flex flex-col items-center bg-gray-200 rounded-lg p-6 space-y-6 mx-auto max-w-md w-full">
       <h2 class="self-start font-serif font-semibold text-lg mb-2">Profile</h2>
 
-      <div
-        class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center"
-        aria-label="User profile icon"
-      >
+      <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
         <img src="/user.png" alt="User profile" class="object-cover w-full h-full" />
       </div>
 
-      <!-- Insert form component -->
       <UserProfileForm />
 
-      <!-- Logout Button -->
       <button
-        class="bg-gray-600 text-white px-8 py-2 rounded-md tracking-wider hover:bg-gray-700 transition"
+        @click="logout"
+        class="bg-gray-600 text-white px-8 py-2 rounded-md tracking-wider hover:bg-gray-700 transition mt-6"
       >
         Log Out
       </button>
     </main>
 
-    <!-- Sidebar - right side fixed width -->
-    <aside class="w-72 border-l border-gray-300 p-6 space-y-4">
+    <!-- Sidebar -->
+    <aside class="w-72 border-l border-gray-300 p-6 space-y-4 overflow-y-auto max-h-screen">
       <h3 class="font-semibold mb-4">your posts,</h3>
+
+      <p v-if="loading">Loading posts...</p>
+      <p v-else-if="error" class="text-red-600">{{ error }}</p>
+      <p v-else-if="posts.length === 0">No posts found.</p>
+
       <div
-        v-for="(item, i) in selectedItems"
-        :key="i"
-        class="bg-gray-300 rounded-md py-3 px-4 text-sm select-text"
+        v-else
+        v-for="post in posts"
+        :key="post.id"
+        class="flex items-center gap-3 bg-gray-300 rounded-md py-2 px-3 text-sm cursor-pointer select-text truncate hover:bg-gray-400"
+        :title="post.title"
+        @click="selectedPost = post"
       >
-        this is your {{ ordinal(i + 1) }} posting
+        <img
+          :src="post.imageUrl"
+          alt="post image"
+          class="w-10 h-10 object-cover rounded"
+          loading="lazy"
+        />
+        <span class="truncate">{{ post.title }}</span>
       </div>
     </aside>
+
+    <!-- Edit Modal -->
+    <EditPostModal
+      :post="selectedPost"
+      @close="selectedPost = null"
+      @refresh="loadPosts"
+    />
   </div>
 </template>
