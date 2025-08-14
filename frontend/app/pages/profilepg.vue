@@ -4,6 +4,7 @@ import UserProfileForm from '../components/UserProfileForm.vue'
 import EditPostModal from '../components/EditPostModal.vue'
 import { postByUserId } from '../composables/postsByUser' // <-- import the composable
 
+
 interface Post {
   id: number
   title: string
@@ -92,3 +93,9 @@ function logout() {
     />
   </div>
 </template>
+
+function definePageMeta(arg0: {
+  middleware: string[] // will run in order: auth → role
+}) {
+  throw new Error('Function not implemented.')
+}

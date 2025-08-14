@@ -47,6 +47,7 @@ export class UserService {
           UserId: true,
           email: true,
           username: true,
+          role: true,
         },
       });
 
