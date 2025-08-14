@@ -2,29 +2,15 @@
 import { ref, onMounted } from 'vue'
 import UserProfileForm from '../components/UserProfileForm.vue'
 import EditPostModal from '../components/EditPostModal.vue'
+import { postByUserId } from '../composables/postsByUser' // <-- import the composable
 
 interface Post {
   id: number
   title: string
   description: string
-  imageUrl: string
-}
-
-async function postByUserId(): Promise<Post[]> {
-  const token = sessionStorage.getItem('authToken')
-  if (!token) throw new Error('No auth token found')
-
-  const base64Payload = token.split('.')[1]
-  const payload = JSON.parse(atob(base64Payload))
-  const userId = payload.sub
-
-  const res = await fetch(`http://localhost:3000/post/user/${userId}`)
-  if (!res.ok) throw new Error('Failed to fetch posts')
-
-  const json = await res.json()
-  if (!json.status) throw new Error(json.message || 'API error')
-
-  return json.data as Post[]
+  imageUrl?: string
+  userId: number
+  createdAt?: string
 }
 
 const posts = ref<Post[]>([])
@@ -37,7 +23,7 @@ onMounted(loadPosts)
 async function loadPosts() {
   loading.value = true
   try {
-    posts.value = await postByUserId()
+    posts.value = await postByUserId() // <-- use composable here
   } catch (err) {
     error.value = (err as Error).message || 'Failed to load posts'
   } finally {
@@ -46,7 +32,9 @@ async function loadPosts() {
 }
 
 function logout() {
-  sessionStorage.removeItem('authToken')
+  sessionStorage.removeItem('authtoken')
+  sessionStorage.removeItem('user')
+  window.location.href = '/home' // Redirect to login page
 }
 </script>
 
@@ -72,7 +60,7 @@ function logout() {
 
     <!-- Sidebar -->
     <aside class="w-72 border-l border-gray-300 p-6 space-y-4 overflow-y-auto max-h-screen">
-      <h3 class="font-semibold mb-4">your posts,</h3>
+      <h3 class="font-semibold mb-4">Your posts</h3>
 
       <p v-if="loading">Loading posts...</p>
       <p v-else-if="error" class="text-red-600">{{ error }}</p>

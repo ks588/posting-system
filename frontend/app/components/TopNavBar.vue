@@ -37,7 +37,7 @@
           Write
         </button>
 
-        <NuxtLink to="/profilepg" class="hover:underline">
+        <NuxtLink @click="userlogic" class="hover:underline">
           <img
             src="/user.png"
             alt="App Icon"
@@ -48,16 +48,44 @@
     </nav>
 
     <WritePostCard v-if="showWriteCard" @close="writeCard" />
+    <LoginRegisterChooseCard v-if="showAuthPrompt" @close="showAuthPrompt = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import WritePostCard from '~/components/WrtiePostCard.vue'
-import PostSearch from '~/components/PostSearch.vue'
+import LoginRegisterChooseCard from './LoginRegisterChooseCard.vue'
 
+const router = useRouter()
 const showWriteCard = ref(false)
+const showAuthPrompt = ref(false) // For login/register choice
+
 function writeCard() {
-  showWriteCard.value = !showWriteCard.value
+  const token = sessionStorage.getItem('authtoken')
+  if(token){
+    showWriteCard.value = !showWriteCard.value
+  } else {
+    // If no token, show login/register choice
+    showAuthPrompt.value = !showAuthPrompt.value
+  }
+  
 }
+
+// User logic function
+function userlogic() {
+  // Get token from sessionStorage
+  const token = sessionStorage.getItem('authtoken')
+
+  if (token) {
+    // Token exists, navigate to profile page
+    router.push('/profilepg')
+  } else {
+    // No token, show login/register component/modal
+    //call LoginRegisterChoose function
+    showAuthPrompt.value = !showAuthPrompt.value
+  }
+}
+
 </script>

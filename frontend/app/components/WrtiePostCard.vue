@@ -1,21 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useCreatePost } from '../composables/useCreatePost'; // adjust path if needed
+import { useCreatePost } from '../composables/useCreatePost';
 import { defineEmits } from 'vue';
 
 const emit = defineEmits(['close']);
-
-// Your standalone login function that saves token to sessionStorage
-function login(): void {
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyNywiZW1haWwiOiJtYWlubHkwMkBlbWFpbC5jb20iLCJpYXQiOjE3NTQ5OTExNzgsImV4cCI6MTc1NTA3NzU3OH0.cusBLi1fsGV2TIrq_FqezqU3zpcDj-_xpH3Ddb2MZmU';
-
-  try {
-    sessionStorage.setItem('authToken', token);
-    console.log('Login successful, token saved.');
-  } catch (error) {
-    console.error('Failed to save token to sessionStorage:', error);
-  }
-}
 
 // Form fields reactive refs
 const title = ref('');
@@ -31,34 +19,39 @@ function close() {
   emit('close');
 }
 
+// Form submit handler
 async function onFormSubmit() {
   error.value = null;
   loading.value = true;
 
   try {
-    // Call login function to save token in sessionStorage (mock login)
-    login();
+    // Ensure user is logged in
+    const token = sessionStorage.getItem('authtoken');
+    if (!token) {
+      alert('You must be logged in to create a post.');
+      return;
+    }
 
-    // Now call createPost with form data
-    const data = await createPost(title.value, description.value);
+    // Call createPost with form data
+    const data = await createPost(title.value, description.value, imageUrl.value);
     console.log('Post created:', data);
 
-    // Optionally reset form fields
+    // Reset form fields
     title.value = '';
     description.value = '';
 
     // Close modal on success
     close();
   } catch (err) {
-    error.value = (typeof err === 'object' && err !== null && 'message' in err)
-      ? (err as { message: string }).message
-      : 'Failed to create post';
+    error.value =
+      typeof err === 'object' && err !== null && 'message' in err
+        ? (err as { message: string }).message
+        : 'Failed to create post';
   } finally {
     loading.value = false;
   }
 }
 </script>
-
 
 <template>
   <div
@@ -97,7 +90,7 @@ async function onFormSubmit() {
           ></textarea>
         </label>
 
-        <!-- For image upload - keeping as input but note your createPost is fixed URL -->
+        <!-- For image upload -->
         <label class="flex flex-col gap-1">
           <span class="text-sm ml-2">Image Upload</span>
           <input

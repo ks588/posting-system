@@ -1,16 +1,22 @@
 export const useCreatePost = () => {
-  const createPost = async (title: string, description: string) => {
+  const createPost = async (title: string, description: string, imageUrl: string) => {
     try {
-      // Hardcoded userId and imageUrl for testing
-      const userId = 127;
-      const imageUrl = "https://example.com/image.jpg";
+      // Get user from session storage
+      const sessionUser = sessionStorage.getItem('user');
+      if (!sessionUser) throw new Error('User not logged in');
+
+      const user = JSON.parse(sessionUser);
+      const userId = user.UserId; // extract UserId
+
+      // get auth token
+      const token = sessionStorage.getItem('authtoken');
 
       // Send POST request to backend
       const res = await fetch("http://localhost:3000/post", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Authorization header can be added here later if needed
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           userId,

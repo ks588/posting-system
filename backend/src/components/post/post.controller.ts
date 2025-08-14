@@ -53,7 +53,7 @@ export class PostController {
   @Roles('user', 'admin')
   create(@Body() createPostDto: CreatePostDto, @Req() req) {
     // attach userId to the post
-    return this.postService.create({ ...createPostDto, userId: req.user.sub });
+    return this.postService.create({ ...createPostDto });
   }
 
   // --------------------- PROTECTED - USER SPECIFIC ROUTES ---------

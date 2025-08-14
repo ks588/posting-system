@@ -28,8 +28,13 @@ export class UserService {
           role
         },
       });
-
-      return user;
+      const payload = {
+        UserId: user.UserId,
+        email: user.email,
+        username: user.username,
+        role: user.role
+      };
+      return payload;
     } catch (error) {
       throw new InternalServerErrorException('Failed to create user');
     }

@@ -31,7 +31,13 @@ export class AuthService {
 
     const payload = { username: user.username, sub: user.UserId, roles: user.role };
     return {
-      access_token: this.jwtService.sign(payload)
+      access_token: this.jwtService.sign(payload),
+      user: {
+        UserId: user.UserId,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     };
   }
 
@@ -42,13 +48,18 @@ export class AuthService {
     const user = await this.userService.create(createUserDto);
     console.log('User created:', user);
 
-    const payload = { sub: user.UserId, email: user.email };
+    const payload = {username: user.username, sub: user.UserId, roles: user.role };
     const token = this.jwtService.sign(payload);
     console.log('Generated token:', token);
 
     const output = {
       access_token: token,
-      user,
+      user : {
+        UserId: user.UserId,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     };
 
     console.log('Final output:', output);
