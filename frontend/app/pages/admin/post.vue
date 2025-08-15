@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { usePosts } from '../../composables/useAllPostAdmin'
+import PostEditModal from '../../components/EditPostModal.vue'
 
-const { posts, loading, error, fetchPosts, deletePost } = usePosts()
+const { posts, loading, error, fetchPosts } = usePosts()
+const selectedPost = ref(null) // To store the selected post for editing
 
 onMounted(() => {
   fetchPosts()
 })
 
-// Dummy handler for update (replace with actual logic)
-function updatePost(id: number) {
-  alert(`Update post ${id}`)
+function openEditModal(post: any) {
+  selectedPost.value = post
+}
+
+function closeModal() {
+  selectedPost.value = null
 }
 </script>
 
@@ -33,8 +38,7 @@ function updatePost(id: number) {
             <th class="py-3 px-4 text-left">Title</th>
             <th class="py-3 px-4 text-left">Description</th>
             <th class="py-3 px-4 text-left">Image</th>
-            <th class="py-3 px-4 text-center">Update</th>
-            <th class="py-3 px-4 text-center">Delete</th>
+            <th class="py-3 px-4 text-center">Actions</th>
           </tr>
         </thead>
 
@@ -51,22 +55,18 @@ function updatePost(id: number) {
               <p class="line-clamp-3 overflow-hidden">{{ post.description }}</p>
             </td>
             <td class="py-2 px-4">
-              <img v-if="post.imageUrl" :src="post.imageUrl" class="w-20 h-12 object-cover rounded" />
+              <img
+                v-if="post.imageUrl"
+                :src="post.imageUrl"
+                class="w-20 h-12 object-cover rounded"
+              />
             </td>
             <td class="py-2 px-4 text-center">
               <button
-                @click="updatePost(post.id)"
-                class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                @click="openEditModal(post)"
+                class="border border-black bg-black text-white px-3 py-1 rounded hover:bg-white hover:text-black transition"
               >
-                Update
-              </button>
-            </td>
-            <td class="py-2 px-4 text-center">
-              <button
-                @click="deletePost(post.id)"
-                class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-              >
-                Delete
+                Edit
               </button>
             </td>
           </tr>
@@ -76,12 +76,19 @@ function updatePost(id: number) {
       <div v-if="posts.length === 0 && !loading" class="text-center mt-4 text-gray-500">
         No posts found.
       </div>
+
+      <!-- Modal -->
+      <PostEditModal
+        v-if="selectedPost"
+        :post="selectedPost"
+        @close="closeModal"
+        @refresh="fetchPosts"
+      />
     </div>
   </div>
 </template>
 
 <style>
-/* Limit description to 3 lines */
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;

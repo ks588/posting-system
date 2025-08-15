@@ -42,7 +42,7 @@ export class UserController {
     const user = await this.userService.findOne(+id);
     if (!user) throw new NotFoundException('User not found');
 
-    if (req.user.roles !== 'admin' && user.UserId !== req.user.sub) {
+    if (req.user.roles !== 'admin' && user.UserId !== req.user.userId) {
       throw new ForbiddenException('Access denied');
     }
 
@@ -60,18 +60,18 @@ export class UserController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
   async update(
-    @Param('id') id: string,
+    @Param('id') UserId: string,
     @Body() updateUserDto: UpdateUserDto,
     @Req() req,
   ) {
-    const user = await this.userService.findOne(+id);
+    const user = await this.userService.findOne(+UserId);
     if (!user) throw new NotFoundException('User not found');
 
-    if (req.user.roles !== 'admin' && user.UserId !== req.user.sub) {
+    if (req.user.roles !== 'admin' && user.UserId !== req.user.userId) {
       throw new ForbiddenException('You can only update your own profile');
     }
 
-    return this.userService.update(+id, updateUserDto);
+    return this.userService.update(+UserId, updateUserDto);
   }
 
   @Delete(':id')

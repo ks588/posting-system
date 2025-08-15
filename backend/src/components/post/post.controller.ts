@@ -69,7 +69,7 @@ export class PostController {
     if (!post) throw new NotFoundException('Post not found');
 
     // Only allow if admin OR owner
-    if (req.user.roles !== 'admin' && post.userId !== req.user.sub) {
+    if (req.user.roles !== 'admin' && post.userId !== req.user.userId) {
       throw new ForbiddenException('You can only update your own posts');
     }
 
@@ -84,7 +84,7 @@ export class PostController {
     if (!post) throw new NotFoundException('Post not found');
 
     // Only allow if admin OR owner
-    if (req.user.roles !== 'admin' && post.userId !== req.user.sub) {
+    if (req.user.roles !== 'admin' && post.userId !== req.user.userId) {
       throw new ForbiddenException('You can only delete your own posts');
     }
 

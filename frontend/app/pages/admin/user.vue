@@ -1,34 +1,64 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useUsers } from '../../composables/useAllUserAdmin'
+import UserModal from '../../components/UpdateUserByAdmin.vue'
+import RegisterModal from '../../components/RegisterCard.vue'
 
 const { users, loading, error, fetchUsers } = useUsers()
-const roleFilter = ref('all') // 'all', 'admin', 'user'
+const roleFilter = ref('all') 
+
+// For update modal
+const selectedUser = ref(null)
+
+// For add user modal
+const showRegisterModal = ref(false)
 
 onMounted(() => {
   fetchUsers()
 })
 
-// Filtered users based on dropdown
+// Computed filter
 const filteredUsers = computed(() => {
   if (roleFilter.value === 'all') return users.value
   return users.value.filter(user => user.role === roleFilter.value)
 })
 
-// Dummy handlers for update/delete (replace with actual logic)
-function updateUser(userId: number) {
-  alert(`Update user ${userId}`)
+// Open update modal
+function openUpdateModal(user: any) {
+  selectedUser.value = {
+    id: user.UserId,
+    username: user.username,
+    email: user.email,
+    role: user.role
+  }
 }
 
-function deleteUser(userId: number) {
-  alert(`Delete user ${userId}`)
+// Close update modal
+function closeModal() {
+  selectedUser.value = null
+}
+
+// Refresh after update/delete/add
+function refreshUsers() {
+  fetchUsers()
+  showRegisterModal.value = false
 }
 </script>
 
 <template>
   <div class="flex justify-center mt-10 px-4">
-    <div class="w-full max-w-4xl">
-      <h2 class="text-2xl font-bold mb-4 text-center">Users</h2>
+    <div class="w-full max-w-5xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Users</h2>
+
+        <!-- Add User Button -->
+        <button
+          @click="showRegisterModal = true"
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+        >
+          + Add User
+        </button>
+      </div>
 
       <!-- Role Filter -->
       <div class="mb-4 text-right">
@@ -40,9 +70,11 @@ function deleteUser(userId: number) {
         </select>
       </div>
 
+      <!-- Loading/Error -->
       <div v-if="loading" class="text-center text-gray-600">Loading...</div>
       <div v-if="error" class="text-center text-red-600">{{ error }}</div>
 
+      <!-- Users Table -->
       <table
         v-else
         class="min-w-full bg-white border border-gray-200 shadow-md rounded-lg overflow-hidden"
@@ -76,16 +108,10 @@ function deleteUser(userId: number) {
             <td class="py-3 px-6">{{ user.email }}</td>
             <td class="py-3 px-6 text-center space-x-2">
               <button
-                @click="updateUser(user.UserId)"
+                @click="openUpdateModal(user)"
                 class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
               >
                 Update
-              </button>
-              <button
-                @click="deleteUser(user.UserId)"
-                class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-              >
-                Delete
               </button>
             </td>
           </tr>
@@ -97,4 +123,19 @@ function deleteUser(userId: number) {
       </div>
     </div>
   </div>
+
+  <!-- Update Modal -->
+  <UserModal
+    v-if="selectedUser"
+    :user="selectedUser"
+    @close="closeModal"
+    @refresh="refreshUsers"
+  />
+
+  <!-- Register Modal -->
+  <RegisterModal
+    v-if="showRegisterModal"
+    @close="showRegisterModal = false"
+    @refresh="refreshUsers"
+  />
 </template>

@@ -13,10 +13,12 @@ export function useUpdatePost() {
     description: string,
     imageUrl: string
   ) {
+    const token = sessionStorage.getItem('authtoken')
     const res = await fetch(`http://localhost:3000/post/${id}`, {
       method: 'PATCH',    // changed from PUT to PATCH
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ title, description, imageUrl }),
     })
