@@ -11,7 +11,10 @@ import {
   ForbiddenException,
   Req,
   NotFoundException,
+  UseInterceptors, 
+  UploadedFile
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -51,18 +54,25 @@ export class PostController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
-  create(@Body() createPostDto: CreatePostDto, @Req() req) {
-    // attach userId to the post
-    return this.postService.create({ ...createPostDto });
+  @UseInterceptors(FileInterceptor('image')) // 'image' = field name in FormData
+  create(
+    @Body() createPostDto: CreatePostDto,
+    @UploadedFile() file: Express.Multer.File, // receives uploaded file
+    @Req() req
+  ) {
+    createPostDto.userId = req.user.userId;
+    return this.postService.create(createPostDto, file);
   }
 
   // --------------------- PROTECTED - USER SPECIFIC ROUTES ---------
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('user', 'admin')
+  @UseInterceptors(FileInterceptor('image')) // 'image' = field name in FormData
   async update(
     @Param('id') id: string,
     @Body() updatePostDto: UpdatePostDto,
+    @UploadedFile() file: Express.Multer.File, // receives uploaded file
     @Req() req,
   ) {
     const post = await this.postService.findOne(+id);
@@ -73,7 +83,7 @@ export class PostController {
       throw new ForbiddenException('You can only update your own posts');
     }
 
-    return this.postService.update(+id, updatePostDto);
+    return this.postService.update(+id, updatePostDto, file);
   }
 
   @Delete(':id')

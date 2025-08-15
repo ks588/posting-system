@@ -7,7 +7,10 @@
     >
       <!-- Left column: Title + Description -->
       <div class="flex-1 flex flex-col">
-        <h2 class="font-bold mb-2">{{ post.title }}</h2>
+        <div class="flex flex-col">
+            <h2 class="font-bold">{{ post.title }}</h2>
+            <p class=" pl-5 text-xs italic mb-2">{{ post.username }}</p>
+        </div>
         <p class="text-xs text-gray-700 pb-2 mx-5 text-right">
           {{ new Date(post.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }}
         </p>
@@ -17,7 +20,7 @@
       </div>
 
       <!-- Right column: Image with favorite button -->
-      <div class="w-100 flex-shrink-0 relative rounded-md overflow-hidden">
+      <div class="w-100 flex-shrink-0 relative rounded-md overflow-hidden h-60">
         <img
           :src="post.imageUrl"
           alt="post image"

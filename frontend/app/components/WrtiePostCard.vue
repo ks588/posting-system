@@ -8,7 +8,7 @@ const emit = defineEmits(['close']);
 // Form fields reactive refs
 const title = ref('');
 const description = ref('');
-const imageUrl = ref('https://example.com/image.jpg');
+const imageFile = ref<File | null>(null); // <- file ref
 
 const { createPost } = useCreatePost();
 
@@ -25,6 +25,11 @@ async function onFormSubmit() {
   loading.value = true;
 
   try {
+    if (!imageFile.value) {
+      error.value = 'Please select an image for the post';
+      return;
+    }
+
     // Ensure user is logged in
     const token = sessionStorage.getItem('authtoken');
     if (!token) {
@@ -33,12 +38,13 @@ async function onFormSubmit() {
     }
 
     // Call createPost with form data
-    const data = await createPost(title.value, description.value, imageUrl.value);
+    const data = await createPost(title.value, description.value, imageFile.value);
     console.log('Post created:', data);
 
     // Reset form fields
     title.value = '';
     description.value = '';
+    imageFile.value = null;
 
     // Close modal on success
     close();
@@ -50,6 +56,13 @@ async function onFormSubmit() {
   } finally {
     loading.value = false;
   }
+}
+
+// File change handler
+function onFileChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0] || null;
+  imageFile.value = file;
 }
 </script>
 
@@ -90,17 +103,16 @@ async function onFormSubmit() {
           ></textarea>
         </label>
 
-        <!-- For image upload -->
+        <!-- Image upload -->
         <label class="flex flex-col gap-1">
-          <span class="text-sm ml-2">Image Upload</span>
+          <span class="text-sm ml-2">Upload Image</span>
           <input
             type="file"
             accept="image/*"
-            disabled
-            title="Image upload not implemented yet"
-            class="border border-gray-300 rounded-md p-2 cursor-not-allowed"
+            @change="onFileChange"
+            class="border border-gray-300 rounded-md p-2"
+            required
           />
-          <small class="text-xs text-gray-500">Image upload will be supported later.</small>
         </label>
 
         <button

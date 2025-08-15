@@ -3,24 +3,37 @@ export function useUpdatePost() {
   /**
    * Update a post by ID using PATCH
    * @param id - post ID
-   * @param title - new title
-   * @param description - new description
-   * @param imageUrl - new image URL
+   * @param data - object containing title, description, optional image file
    */
   async function updatePost(
     id: number,
-    title: string,
-    description: string,
-    imageUrl: string
+    data: { title: string; description: string },
+    file?: File
   ) {
     const token = sessionStorage.getItem('authtoken')
+
+    // Use FormData if a file exists
+    let body: FormData | string
+    let headers: Record<string, string> = {
+      'Authorization': `Bearer ${token}`,
+    }
+
+    if (file) {
+      const formData = new FormData()
+      formData.append('title', data.title)
+      formData.append('description', data.description)
+      formData.append('image', file) // key should match backend FileInterceptor('image')
+      body = formData
+      // Remove 'Content-Type', browser sets multipart/form-data automatically
+    } else {
+      headers['Content-Type'] = 'application/json'
+      body = JSON.stringify(data)
+    }
+
     const res = await fetch(`http://localhost:3000/post/${id}`, {
-      method: 'PATCH',    // changed from PUT to PATCH
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ title, description, imageUrl }),
+      method: 'PATCH',
+      headers,
+      body,
     })
 
     if (!res.ok) {
