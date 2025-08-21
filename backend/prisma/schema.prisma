@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  // output   = "../generated/prisma"
 }
 
 datasource db {
@@ -17,18 +17,57 @@ model Post {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("posts") //table name 
+  user        User     @relation(fields: [userId], references: [UserId])
+
+  @@map("posts")
 }
 
 model User {
   UserId       Int       @id @default(autoincrement())
+  CustomerId  String?   @unique // Stripe customer I
   email        String    @unique
   password     String
-  username     String?   
-  roles        String[]  @default(["user"])
+  username     String?
+  role         String    @default("user")
   refreshToken String?   // hashed refresh token
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  @@map("user")  //user table name
+  subscriptions UserSubscription[] // relation to subscriptions
+  posts         Post[]             // relation to posts
+
+  @@map("user")
+}
+
+model Plan {
+  id             Int       @id @default(autoincrement())
+  name           String
+  stripePriceId  String    @unique
+  type           String    // "monthly" or "yearly"
+  maxPosts       Int?      // null = unlimited
+  priceUsd       Float
+  description    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  userSubscriptions UserSubscription[] // relation to users
+  @@map("plans")
+}
+
+model UserSubscription {
+  id                    Int      @id @default(autoincrement())
+  userId                Int
+  planId                Int
+  stripeSubscriptionId  String   @unique
+  status                String   // "active", "canceled", "expired", "trial", etc.
+  postsUsed             Int      @default(0)
+  startedAt             DateTime @default(now())
+  expiresAt             DateTime
+  lastResetAt           DateTime?
+  nextResetAt           DateTime?
+
+  user User @relation(fields: [userId], references: [UserId])
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@map("user_subscriptions")
 }

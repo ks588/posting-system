@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class UserService {
@@ -11,27 +11,30 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const { email, password, username } = createUserDto;
+      const { email, password, username, role } = createUserDto;
 
-      // Check if user already exists
       const existingUser = await this.prisma.user.findUnique({ where: { email } });
       if (existingUser) {
         throw new ConflictException('Email already in use');
       }
 
-      // Password hashing
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create user
       const user = await this.prisma.user.create({
         data: {
           email,
           password: hashedPassword,
           username,
+          role
         },
       });
-
-      return user;
+      const payload = {
+        UserId: user.UserId,
+        email: user.email,
+        username: user.username,
+        role: user.role
+      };
+      return payload;
     } catch (error) {
       throw new InternalServerErrorException('Failed to create user');
     }
@@ -44,6 +47,7 @@ export class UserService {
           UserId: true,
           email: true,
           username: true,
+          role: true,
         },
       });
 
@@ -58,10 +62,10 @@ export class UserService {
   }
 
   async update(UserId: number, updateUserDto: UpdateUserDto) {
-    
-    if (updateUserDto.password) { //if user update the password 
+    if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
+
     try {
       const updatedUser = await this.prisma.user.update({
         where: { UserId },
@@ -75,12 +79,11 @@ export class UserService {
         },
       });
 
-
       return updatedUser;
-    } catch (error) {
+    } catch (error: unknown) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025' // Record not found
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
       ) {
         throw new NotFoundException(`User with ID ${UserId} not found`);
       }
@@ -92,10 +95,10 @@ export class UserService {
     try {
       await this.prisma.user.delete({ where: { UserId } });
       return { message: `User with ID ${UserId} removed successfully` };
-    } catch (error) {
+    } catch (error: unknown) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025' // Record not found
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
       ) {
         throw new NotFoundException(`User with ID ${UserId} not found`);
       }
@@ -103,7 +106,7 @@ export class UserService {
     }
   }
 
-  async findOne(UserId: number) { //find user by id 
+  async findOne(UserId: number) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { UserId },
@@ -125,8 +128,7 @@ export class UserService {
     }
   }
 
-  //find user by email
-  async findByEmail(email : string ) { //find user by id 
+  async findByEmail(email: string) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { email },
@@ -135,7 +137,8 @@ export class UserService {
           email: true,
           username: true,
           createdAt: true,
-          password:true,
+          password: true,
+          role:true
         },
       });
 
