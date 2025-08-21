@@ -6,6 +6,9 @@ export class User {
   UserId:number;
 
   @Column({ unique: true })
+  CustomerId: string; // Stripe customer ID
+
+  @Column({ unique: true })
   email: string;
 
   @Column()

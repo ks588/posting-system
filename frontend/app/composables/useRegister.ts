@@ -32,8 +32,11 @@ export function useRegister() {
       });
 
       // Store token & user in session storage
-      //sessionStorage.setItem("authtoken", res.data.access_token);
-      //sessionStorage.setItem("user", JSON.stringify(res.data.user));
+      // sessionStorage.setItem("authtoken", res.data.access_token);
+      // sessionStorage.setItem("user", JSON.stringify(res.data.user));
+
+      // Save temp_userId for later use (e.g., Stripe subscription)
+      sessionStorage.setItem("temp_userId", res.data.user.UserId.toString());
 
       return true;
     } catch (err: unknown) {

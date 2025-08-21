@@ -2,10 +2,15 @@
 import { reactive, ref } from 'vue'
 import { z, ZodError } from 'zod'
 import { useRegister } from '../composables/useRegister' // adjust path
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'showSubscription'])
+
+
 
 function close() {
   emit('close')
+}
+function ShowSubscription() {
+  emit('showSubscription')
 }
 
 // Zod schema
@@ -59,6 +64,7 @@ async function onSubmit() {
   const success = await register(form.username, form.email, form.password)
   if (success) {
     close()
+    ShowSubscription()
   } else {
     serverError.value = error.value || 'Registration failed'
   }

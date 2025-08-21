@@ -5,6 +5,8 @@ import { UserModule } from '../user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../../common/auth/strategies/jwt.strategy';
+import Stripe from 'stripe';
+import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
   imports: [
@@ -14,6 +16,7 @@ import { JwtStrategy } from '../../common/auth/strategies/jwt.strategy';
       secret: process.env.JWT_ACCESS_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
+    StripeModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
