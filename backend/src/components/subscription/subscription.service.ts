@@ -88,4 +88,12 @@ export class SubscriptionService {
   remove(id: number) {
     return `This action removes a #${id} subscription`;
   }
+
+  async getAllSubscriptions() { //admin allowed view all subscriptions
+    const subscriptions = await this.prisma.userSubscription.findMany({
+  });
+    
+    return subscriptions;
+}
+
 }

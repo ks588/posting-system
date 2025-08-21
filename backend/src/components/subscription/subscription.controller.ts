@@ -18,8 +18,8 @@ export class SubscriptionController {
   }
 
   @Get()
-  findAll() {
-    return this.subscriptionService.findAll();
+  async getAllSubscriptions() {
+    return await this.subscriptionService.getAllSubscriptions();
   }
 
   @Get(':id')

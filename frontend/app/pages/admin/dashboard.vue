@@ -2,18 +2,27 @@
 import { onMounted, computed } from 'vue'
 import { useUsers } from '../../composables/useAllUserAdmin'
 import { usePosts } from '../../composables/useAllPostAdmin'
+import { useSubscriptions } from '../../composables/useAllSubscriptions'
 
 const { users, fetchUsers, loading: usersLoading } = useUsers()
 const { posts, fetchPosts, loading: postsLoading } = usePosts()
+const { subscriptions, fetchSubscriptions, loading: subsLoading } = useSubscriptions()
 
 onMounted(() => {
   fetchUsers()
   fetchPosts()
+  fetchSubscriptions()
 })
 
 // Computed properties
 const totalUsers = computed(() => Array.isArray(users.value) ? users.value.length : 0)
 const totalPosts = computed(() => Array.isArray(posts.value) ? posts.value.length : 0)
+
+// Total earnings from subscriptions
+const totalEarnings = computed(() => {
+  if (!Array.isArray(subscriptions.value)) return 0
+  return subscriptions.value.reduce((sum, sub) => sum + (sub.planPrice || 0), 0)
+})
 
 // Get latest 2 posts (sorted by createdAt descending)
 const latestPosts = computed(() => {
@@ -22,9 +31,6 @@ const latestPosts = computed(() => {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 2)
 })
-
-// Dummy earnings
-const currentEarnings = 1234.56
 </script>
 
 <template>
@@ -44,8 +50,9 @@ const currentEarnings = 1234.56
       </div>
 
       <div class="bg-gray-100 text-gray-900 p-6 rounded shadow text-center">
-        <h2 class="text-lg font-semibold">Current Earnings</h2>
-        <p class="text-3xl font-bold mt-2">${{ currentEarnings.toFixed(2) }}</p>
+        <h2 class="text-lg font-semibold">Total Earnings</h2>
+        <div v-if="subsLoading" class="text-gray-500">Calculating...</div>
+        <p v-else class="text-3xl font-bold mt-2">${{ totalEarnings.toFixed(2) }}</p>
       </div>
     </div>
 
